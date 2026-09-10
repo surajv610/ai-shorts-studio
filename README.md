@@ -1,10 +1,89 @@
-# AI Shorts Studio V1
+# AI Shorts Studio
 
-Human-in-the-loop AI Shorts production studio. In V1 the application produces a
-final MP4 plus YouTube title/description/hashtags. Uploading and publishing to
-YouTube is intentionally manual.
+Human-in-the-loop AI Shorts production studio. Turn an idea into a final MP4
+plus YouTube title/description/hashtags through a multi-agent pipeline — with a
+human approving every creative step. Uploading and publishing to YouTube stays
+intentional and manual.
 
-## V1 workflow
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=fff)
+![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=fff)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=000)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=fff)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-ready-07B62A)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+> **Mock mode by default** — the entire pipeline runs end-to-end with zero cost
+> and no API keys, so you can try it immediately.
+
+## Features
+
+- **Multi-agent pipeline** — Master → Story → Image → Video → Assembly → QC →
+  Metadata, each with a clear responsibility.
+- **Human-in-the-loop checkpoints** — approve the storyboard; pick the best
+  image per scene; review the final MP4 + YouTube metadata before keeping it.
+- **Ships in mock mode** — deterministic storyboard, PNG candidate images, and
+  FFmpeg-rendered MP4 clips with no paid calls.
+- **Real providers behind one abstraction** — OpenAI-compatible LLMs, Google
+  Gemini (LLM + Nano-Banana images), Google Veo (image-to-video). No silent
+  fallbacks: failures surface explicit typed errors.
+- **Structured output** — Gemini JSON-schema mode and OpenAI `json_schema` for
+  reliable storyboards, Project Bibles and metadata.
+- **Reactive dashboard** — live stage progress with per-stage next-action
+  guidance on a React + Vite frontend.
+- **Secret-safe by design** — keys live only server-side in the environment and
+  never reach the frontend, logs, or error responses.
+
+## Try it (2 minutes, free)
+
+```bash
+# 1. Backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # mock mode is the default — no keys needed
+uvicorn backend.api:app --reload --port 8000
+
+# 2. Frontend (new terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**, start a production with any idea, and watch it
+flow through the pipeline. API docs: http://localhost:8000/docs.
+
+## Screenshots
+
+> Drop images into `docs/screenshots/` and reference them here to showcase the
+> dashboard, workspace, and final review screens.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    UI["React SPA (Vite)"] -->|"REST /api"| API["FastAPI backend"]
+    API --> WF["Workflow state machine"]
+    WF --> MA["Master Agent"]
+    MA --> SA["Story Agent"]
+    SA --> IMG["Image Agent"]
+    IMG --> VID["Video Agent"]
+    VID --> ASM["Assembler (FFmpeg)"]
+    ASM --> QC["Quality Control"]
+    QC --> META["Metadata Agent"]
+    META --> FR["Final Review + download"]
+
+    SA --> LLM["LLM Provider<br/>mock / Gemini / OpenAI"]
+    IMG --> IP["Image Provider<br/>mock / Gemini Nano Banana"]
+    VID --> VP["Video Provider<br/>mock / Google Veo"]
+
+    IP --> STORE[("Local storage<br/>storage/")]
+    VP --> STORE
+    STORE --> ASM
+```
+
+Providers, agents, the workflow state machine, frontend and storage are
+decoupled: plugging in a new vendor never touches the agents or UI.
+
+## Workflow
 
 ```
 User idea
@@ -25,7 +104,7 @@ User idea
 
 - **Python 3.11+** (tested on 3.13)
 - **Node.js 18+** and **npm** (for the frontend)
-- **FFmpeg** (recommended) — used by the mock video provider and later by the
+- **FFmpeg** (recommended) — used by the mock video provider and the
   assembler to render real MP4 clips.
 
 ### Installing FFmpeg
@@ -285,3 +364,7 @@ storage/projects/
     metadata/
     qc/
 ```
+
+## License
+
+[MIT](LICENSE)
